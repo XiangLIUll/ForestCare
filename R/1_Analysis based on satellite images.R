@@ -176,17 +176,22 @@ write.csv(newG006, "T:/groups2/ForestCare/Analysis/stat outputs/G006_50_Satellit
 #############################################################
 ### Step 2: analysis using new stat data
 #############################################################
-df1 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/F101_50_Satellite.csv")[,-1]
-df2 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/F102_50_Satellite.csv")[,-1]
-df3 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/F103_50_Satellite.csv")[,-1]
-df4 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/F301_50_Satellite.csv")[,-1]
-df5 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/G005_50_Satellite.csv")[,-1]
-df6 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/G006_50_Satellite.csv")[,-1]
+df1 <- read.csv("H:/ForestCare/Analysis/stat outputs/F101_50_Satellite.csv")[,-1]
+df2 <- read.csv("H:/ForestCare/Analysis/stat outputs/F102_50_Satellite.csv")[,-1]
+df3 <- read.csv("H:/ForestCare/Analysis/stat outputs/F103_50_Satellite.csv")[,-1]
+df4 <- read.csv("H:/ForestCare/Analysis/stat outputs/F301_50_Satellite.csv")[,-1]
+df5 <- read.csv("H:/ForestCare/Analysis/stat outputs/G005_50_Satellite.csv")[,-1]
+df6 <- read.csv("H:/ForestCare/Analysis/stat outputs/G006_50_Satellite.csv")[,-1]
 
 # names between df6 and other plots do not match, replace them
 names(df6) <- names(df5)
 df <- rbind(df1,df2,df3,df4,df5,df6)
 
+# export the dataframe
+write.csv(df,"Datasets/satellite_polygon.csv")
+
+
+# remove NA 
 newdf <- data.frame(df)
 newdf[,1:54][is.na(newdf[,1:54])] <- 0
 newdf[,1:54][sapply(newdf[,1:54], is.infinite)] <- 0
@@ -194,7 +199,7 @@ newdf[,1:54][sapply(newdf[,1:54], is.infinite)] <- 0
 table(newdf$stamm_vita)
 newdf$stam <- factor(newdf$stamm_vita, 
                      levels = c("abgestorben", "gesund", "leichter Schaden", "mittlerer Schaden", "schwerer Schaden"),
-                     labels = c("dead", "healthy", "slight damage", "medium damage", "serious damage"))
+                     labels = c("Dead", "Healthy", "Slight damage", "Medium damage", "Serious damage"))
 table(newdf$stam)
 
 A <- ggboxplot(newdf,"stam","blue_mean",color = "stam")
@@ -206,11 +211,15 @@ C <- ggboxplot(newdf,"stam","red_mean",color = "stam")
 D <- ggboxplot(newdf,"stam","nir_mean",color = "stam")
 
 E <- ggboxplot(newdf,"stam","rededge_mean",color = "stam")
-
-F <- ggboxplot(newdf,"stam","ndvi_mean",color = "stam")
-
 ggarrange(A,B,C,D,E,F,ncol=3,nrow=2,common.legend=TRUE,legend = "top",hjust = 0,labels= c("(a)","(b)","(c)","(d)","(e)","(f)"))
-ggsave("H:/ForestCare/stamm.jpg",width = 28,height = 18, units = "cm",dpi = 1000)
+
+
+
+(F <- ggboxplot(newdf,"stam","ndvi_mean",color = "stam") + 
+     stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "red", position = position_dodge(width = 0.75)) +
+     theme_bw() + scale_x_discrete(labels = c("Healthy", "Slight damage", "Medium damage", "Serious damage", "Dead")) +
+     labs(x = "Stem", y = "NDVI") + theme(legend.position = "none"))
+ggsave("Output figures/Polygon_Stem_NDVI.jpg",width = 28,height = 18, units = "cm",dpi = 1000)
 
 
 ## randomforest
@@ -237,12 +246,13 @@ C <- ggboxplot(newdf,"krone","red_mean",color = "krone")
 
 D <- ggboxplot(newdf,"krone","nir_mean",color = "krone")
 
-E <- ggboxplot(newdf,"krone","rededge_mean",color = "krone")
+ggarrange(A,B,C,D,ncol=2,nrow=2,common.legend=TRUE,legend = "top",hjust = 0,labels= c("(a)","(b)","(c)","(d)"))
 
-F <- ggboxplot(newdf,"krone","ndvi_mean",color = "krone")
-
-ggarrange(A,B,C,D,E,F,ncol=3,nrow=2,common.legend=TRUE,legend = "top",hjust = 0,labels= c("(a)","(b)","(c)","(d)","(e)","(f)"))
-ggsave("H:/ForestCare/kronem.jpg",width = 28,height = 18, units = "cm",dpi = 1000)
+(F <- ggboxplot(newdf,"krone","ndvi_mean",color = "krone") + 
+    stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "red", position = position_dodge(width = 0.75)) +
+    theme_bw() + scale_x_discrete(labels = c("Healthy", "Slight damage", "Medium damage", "Serious damage", "Dead")) +
+    labs(x = "krone", y = "NDVI") + theme(legend.position = "none"))
+ggsave("Output figures/Polygon_krone_NDVI.jpg",width = 28,height = 18, units = "cm",dpi = 1000)
 
 
 ## randomforest
