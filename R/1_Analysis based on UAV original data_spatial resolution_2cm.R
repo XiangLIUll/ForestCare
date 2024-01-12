@@ -175,16 +175,20 @@ write.csv(newG006, "T:/groups2/ForestCare/Analysis/stat outputs/G006_2cm.csv")
 #############################################################
 ### Step 2: analysis using new stat data
 #############################################################
-df1 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/F101_2cm.csv")[,-1]
-df2 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/F102_2cm.csv")[,-1]
-df3 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/F103_2cm.csv")[,-1]
-df4 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/F301_2cm.csv")[,-1]
-df5 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/G005_2cm.csv")[,-1]
-df6 <- read.csv("T:/groups2/ForestCare/Analysis/stat outputs/G006_2cm.csv")[,-1]
+df1 <- read.csv("H:/ForestCare/Analysis/stat outputs/F101_2cm.csv")[,-1]
+df2 <- read.csv("H:/ForestCare/Analysis/stat outputs/F102_2cm.csv")[,-1]
+df3 <- read.csv("H:/ForestCare/Analysis/stat outputs/F103_2cm.csv")[,-1]
+df4 <- read.csv("H:/ForestCare/Analysis/stat outputs/F301_2cm.csv")[,-1]
+df5 <- read.csv("H:/ForestCare/Analysis/stat outputs/G005_2cm.csv")[,-1]
+df6 <- read.csv("H:/ForestCare/Analysis/stat outputs/G006_2cm.csv")[,-1]
 
 # names between df6 and other plots do not match, replace them
 names(df6) <- names(df5)
 df <- rbind(df1,df2,df3,df4,df5,df6)
+
+# export the data
+write.csv(df,"Datasets/UAV_2cm_polygon.csv")
+
 newdf <- data.frame(df)
 newdf[,1:72][is.na(newdf[,1:72])] <- 0
 newdf[,1:72][sapply(newdf[,1:72], is.infinite)] <- 0
@@ -207,7 +211,11 @@ D <- ggboxplot(newdf1,"stamm_vita","nir_mean",color = "stamm_vita")
 
 E <- ggboxplot(newdf1,"stamm_vita","rededge_mean",color = "stamm_vita")
 
-F <- ggboxplot(newdf1,"stamm_vita","ndvi_mean",color = "stamm_vita")
+(F <- ggboxplot(newdf1,"stamm_vita1","ndvi_mean",color = "stamm_vita1") + 
+    stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "red", position = position_dodge(width = 0.75)) +
+    theme_bw() + #scale_x_discrete(labels = c("Healthy", "Slight damage", "Medium damage", "Serious damage", "Dead")) +
+    labs(x = "Stem", y = "NDVI") + theme(legend.position = "none"))
+ggsave("Output figures/Polygon_Stem_UAV2cm_NDVI.jpg",width = 28,height = 18, units = "cm",dpi = 1000)
 
 ggarrange(A,B,C,D,E,F,ncol=3,nrow=2,common.legend=TRUE,legend = "top",hjust = 0,labels= c("(a)","(b)","(c)","(d)","(e)","(f)"))
 ggsave("H:/ForestCare1/stamm.jpg",width = 40,height = 18, units = "cm",dpi = 1000)
@@ -243,6 +251,14 @@ F <- ggboxplot(newdf2,"crown_vita","ndvi_mean",color = "crown_vita")
 
 ggarrange(A,B,C,D,E,F,ncol=3,nrow=2,common.legend=TRUE,legend = "top",hjust = 0,labels= c("(a)","(b)","(c)","(d)","(e)","(f)"))
 ggsave("H:/ForestCare1/crown_vita.jpg",width = 40,height = 18, units = "cm",dpi = 1000)
+
+(F <- ggboxplot(newdf2,"crown_vita","ndvi_mean",color = "crown_vita") + 
+    stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "red", position = position_dodge(width = 0.75)) +
+    theme_bw() + #scale_x_discrete(labels = c("Healthy", "Slight damage", "Medium damage", "Serious damage", "Dead")) +
+    labs(x = "krone", y = "NDVI") + theme(legend.position = "none"))
+ggsave("Output figures/Polygon_krone_UAV2cm_NDVI.jpg",width = 28,height = 18, units = "cm",dpi = 1000)
+
+
 ## randomforest
 newdata2 <- cbind(newdf2$crown_vita,newdf2[,1:72])
 newdata3 <- na.omit(newdata2)

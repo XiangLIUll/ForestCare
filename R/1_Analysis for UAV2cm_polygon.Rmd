@@ -1,0 +1,92 @@
+---
+title: "Analysis based on UAV spatial resolution: 2cm"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+library(readr)
+library(randomForest)
+library(ggplot2)
+library(ggpubr)
+```
+
+```{r}
+df <- read.csv("H:/ForestCare/forestCare/ForestCare/Datasets/UAV_2cm_polygon.csv")[,-1]
+colnames(df)
+# remove NA 
+newdf <- data.frame(df)
+newdf[,1:72][is.na(newdf[,1:72])] <- 0
+newdf[,1:72][sapply(newdf[,1:72], is.infinite)] <- 0
+```
+```{r}
+table(newdf$stamm_vita)
+newdf$stamm_vita1 <- factor(newdf$stamm_vita, 
+                           levels = c("abgestorben", "gesund", "leichter Schaden", "mittlerer Schaden", "schwerer Schaden"),
+                           labels = c("Dead", "Healthy", "S_damage", "M_damage", "H_damage"))
+# table(newdf$stamm_vita1)
+```
+```{r}
+# boxplot for different spectral bands
+newdf1 <- newdf[-which(is.na(newdf$stamm_vita1)),]
+(A <- ggboxplot(newdf1,"stamm_vita1","blue_mean",color = "stamm_vita1"))
+B <- ggboxplot(newdf1,"stamm_vita1","green_mean",color = "stamm_vita1")
+C <- ggboxplot(newdf1,"stamm_vita1","red_mean",color = "stamm_vita1")
+D <- ggboxplot(newdf1,"stamm_vita1","nir_mean",color = "stamm_vita1")
+E <- ggboxplot(newdf1,"stamm_vita1","rededge_mean",color = "stamm_vita1")
+ggarrange(A,B,C,D,E,ncol=2,nrow=3,common.legend=TRUE,legend = "top",hjust = 0,labels= c("(a)","(b)","(c)","(d)","(e)"))
+```
+```{r}
+# boxplot for NDVI
+(F <- ggboxplot(newdf1,"stamm_vita1","ndvi_mean",color = "stamm_vita1") + 
+     stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "red", position = position_dodge(width = 0.75)) +
+     theme_bw() + #scale_x_discrete(labels = c("Healthy", "Slight damage", "Medium damage", "Serious damage", "Dead")) +
+     labs(x = "Stem", y = "NDVI") + theme(legend.position = "none"))
+# ggsave("Output figures/Polygon_Stem_UAV2cm_NDVI.jpg",width = 28,height = 18, units = "cm",dpi = 1000)
+```
+
+```{r}
+## randomforest
+newdata <- cbind(newdf1$stamm_vita1,newdf1[,1:72])
+newdata1 <- na.omit(newdata)
+rf <- randomForest(newdata1[,-1],as.factor(newdata1[,1]))
+rf
+```
+```{r}
+varImpPlot(rf,main = "variable imaportance for stamm_vital_kat")
+```
+```{r}
+table(newdf$krone_vi_3)
+newdf$crown_vita <- factor(newdf$krone_vi_3, 
+                           levels = c("abgestorben", "gesund", "leichter Schaden", "mittlerer Schaden", "schwerer Schaden"),
+                           labels = c("dead", "healthy", "s_damage", "m_damage", "h_damage"))
+table(newdf$crown_vita)
+```
+```{r}
+# boxplot for different spectral bands
+newdf2 <- newdf[-which(is.na(newdf$crown_vita)),]
+(A <- ggboxplot(newdf2,"crown_vita","blue_mean",color = "crown_vita"))
+B <- ggboxplot(newdf2,"crown_vita","green_mean",color = "crown_vita")
+C <- ggboxplot(newdf2,"crown_vita","red_mean",color = "crown_vita")
+D <- ggboxplot(newdf2,"crown_vita","nir_mean",color = "crown_vita")
+E <- ggboxplot(newdf2,"crown_vita","rededge_mean",color = "crown_vita")
+ggarrange(A,B,C,D,E,ncol=3,nrow=2,common.legend=TRUE,legend = "top",hjust = 0,labels= c("(a)","(b)","(c)","(d)","(e)"))
+```
+```{r}
+(F <- ggboxplot(newdf2,"crown_vita","ndvi_mean",color = "crown_vita") + 
+     stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "red", position = position_dodge(width = 0.75)) +
+     theme_bw() + #scale_x_discrete(labels = c("Healthy", "Slight damage", "Medium damage", "Serious damage", "Dead")) +
+     labs(x = "krone", y = "NDVI") + theme(legend.position = "none"))
+# ggsave("Output figures/Polygon_krone_NDVI.jpg",width = 28,height = 18, units = "cm",dpi = 1000)
+```
+```{r}
+## randomforest
+newdata2 <- cbind(newdf2$crown_vita,newdf2[,1:72])
+newdata3 <- na.omit(newdata2)
+colnames(newdata3)[1] <- "crown_vita"
+rf1 <- randomForest(newdata3[,-1],as.factor(newdata3[,1]))
+rf1
+```
+```{r}
+varImpPlot(rf1,main = "variable imaportance for krone_vital_kat")
+```
+
