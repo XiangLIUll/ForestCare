@@ -186,12 +186,14 @@ df6 <- read.csv("H:/ForestCare/Analysis/stat outputs/G006_2cm.csv")[,-1]
 names(df6) <- names(df5)
 df <- rbind(df1,df2,df3,df4,df5,df6)
 
+table(df1$baumklasse)
+
 # export the data
 write.csv(df,"Datasets/UAV_2cm_polygon.csv")
 
 newdf <- data.frame(df)
-newdf[,1:72][is.na(newdf[,1:72])] <- 0
-newdf[,1:72][sapply(newdf[,1:72], is.infinite)] <- 0
+newdf[,1:118][is.na(newdf[,1:118])] <- 0
+newdf[,1:118][sapply(newdf[,1:118], is.infinite)] <- 0
 
 
 table(newdf$stamm_vita)
@@ -230,27 +232,83 @@ varImpPlot(rf,main = "variable imaportance for stamm_vital_kat")
 
 
 # krone
-table(newdf$krone_vi_3)
-newdf$crown_vita <- factor(newdf$krone_vi_3, 
-                           levels = c("abgestorben", "gesund", "leichter Schaden", "mittlerer Schaden", "schwerer Schaden"),
-                           labels = c("dead", "healthy", "s_damage", "m_damage", "h_damage"))
-table(newdf$crown_vita)
+newdf1 <- newdf[-which(newdf$krone_vi_3 == "0"),]
+table(newdf1$krone_vi_3)
+newdf1$crown_vita <- factor(newdf1$krone_vi_3, 
+                           levels = c( "gesund", "leichter Schaden", "mittlerer Schaden", "schwerer Schaden","abgestorben"),
+                           labels = c("Healthy", "Slightly damaged", "Medium damaged", "Heavily damaged", "Dead"))
+table(newdf1$crown_vita)
 
-newdf2 <- newdf[-which(is.na(newdf$crown_vita)),]
-A <- ggboxplot(newdf2,"crown_vita","blue_mean",color = "crown_vita")
+classes <- names(table(newdf1$crown_vita))
+all_combinations <- combn(classes, 2, simplify = TRUE)
+unique_combinations <- lapply(1:ncol(all_combinations), function(x) {
+  sort(all_combinations[, x])})
 
-B <- ggboxplot(newdf2,"crown_vita","green_mean",color = "crown_vita")
+newdf1$cig_mean <- ifelse(newdf1$cig_mean > 10, 10, newdf1$cig_mean)
+summary(aov(cig_mean ~ crown_vita, data = newdf1))
+A <- ggboxplot(newdf1,"crown_vita","cig_mean",color = "crown_vita", add = "mean",xlab = FALSE,bxp.errorbar = TRUE) +
+  scale_color_discrete(name = "Health stage") + 
+  theme(panel.border = element_rect(color = "black", fill = NA)) +
+  theme(legend.position = "none",axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) + ylab("CIG") +
+  stat_compare_means(comparisons = unique_combinations, 
+                     symnum.args = list(cutpoints = c(0, 0.00001, 0.0001, 0.001, 0.01,  1), symbols = c("****", "***", "**", "*", "ns")),
+                     hide.ns = FALSE, label = "p.signif",geom = "pointrange", bracket.size = 0)
+    
+newdf1$psri_mean <- ifelse(newdf1$psri_mean > 1, 1, ifelse(newdf1$psri_mean < -1, -1, newdf1$psri_mean))
+summary(aov(psri_mean ~ crown_vita, data = newdf1))
+B <- ggboxplot(newdf1,"crown_vita","psri_mean",color = "crown_vita", add = "mean",xlab = FALSE,bxp.errorbar = TRUE) +
+  scale_color_discrete(name = "Health stage") + 
+  theme(panel.border = element_rect(color = "black", fill = NA)) +
+  theme(legend.position = "none",axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) + ylab("PSRI") +
+  stat_compare_means(comparisons = unique_combinations, 
+                     symnum.args = list(cutpoints = c(0, 0.00001, 0.0001, 0.001, 0.01,  1), symbols = c("****", "***", "**", "*", "ns")),
+                     hide.ns = FALSE, label = "p.signif",geom = "pointrange", bracket.size = 0) 
 
-C <- ggboxplot(newdf2,"crown_vita","red_mean",color = "crown_vita")
+summary(aov(gndvi_mean ~ crown_vita, data = newdf1))
+C <- ggboxplot(newdf1,"crown_vita","gndvi_mean",color = "crown_vita", add = "mean",xlab = FALSE,bxp.errorbar = TRUE) +
+  scale_color_discrete(name = "Health stage") + 
+  theme(panel.border = element_rect(color = "black", fill = NA)) +
+  theme(legend.position = "none", axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) + ylab("GNDVI") +
+  stat_compare_means(comparisons = unique_combinations, 
+                     symnum.args = list(cutpoints = c(0, 0.00001, 0.0001, 0.001, 0.01,  1), symbols = c("****", "***", "**", "*", "ns")),
+                     hide.ns = FALSE, label = "p.signif",geom = "pointrange", bracket.size = 0) 
 
-D <- ggboxplot(newdf2,"crown_vita","nir_mean",color = "crown_vita")
+summary(aov(arvi_mean ~ crown_vita, data = newdf1))
+D <- ggboxplot(newdf1,"crown_vita","arvi_mean",color = "crown_vita", add = "mean",xlab = FALSE,bxp.errorbar = TRUE) +
+  scale_color_discrete(name = "Health stage") + 
+  theme(panel.border = element_rect(color = "black", fill = NA)) +
+  theme(legend.position = "none", axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) + ylab("ARVI") +
+  stat_compare_means(comparisons = unique_combinations, 
+                     symnum.args = list(cutpoints = c(0, 0.00001, 0.0001, 0.001, 0.01,  1), symbols = c("****", "***", "**", "*", "ns")),
+                     hide.ns = FALSE, label = "p.signif",geom = "pointrange", bracket.size = 0) 
 
-E <- ggboxplot(newdf2,"crown_vita","rededge_mean",color = "crown_vita")
+summary(aov(rndvi_mean ~ crown_vita, data = newdf1))
+E <- ggboxplot(newdf1,"crown_vita","rndvi_mean",color = "crown_vita", add = "mean",xlab = FALSE,bxp.errorbar = TRUE) +
+  scale_color_discrete(name = "Health stage") + 
+  theme(panel.border = element_rect(color = "black", fill = NA)) +
+  theme(legend.position = "none", axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) + ylab("RNDVI") +
+  stat_compare_means(comparisons = unique_combinations,
+                     symnum.args = list(cutpoints = c(0, 0.00001, 0.0001, 0.001, 0.01,  1), symbols = c("****", "***", "**", "*", "ns")),
+                     hide.ns = FALSE, label = "p.signif",geom = "pointrange", bracket.size = 0) 
 
-F <- ggboxplot(newdf2,"crown_vita","ndvi_mean",color = "crown_vita")
+summary(aov(ndvi_mean ~ crown_vita, data = newdf1))
+F <- ggboxplot(newdf1,"crown_vita","ndvi_mean",color = "crown_vita", add = "mean",xlab = FALSE,bxp.errorbar = TRUE) +
+  scale_color_discrete(name = "Health stage") + 
+  theme(panel.border = element_rect(color = "black", fill = NA)) +
+  theme(legend.position = "none", axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) + ylab("NDVI") +
+  stat_compare_means(comparisons = unique_combinations, 
+                     symnum.args = list(cutpoints = c(0, 0.00001, 0.0001, 0.001, 0.01,  1), symbols = c("****", "***", "**", "*", "ns")),
+                     hide.ns = FALSE, label = "p.signif",geom = "pointrange", bracket.size = 0) 
+
 
 ggarrange(A,B,C,D,E,F,ncol=3,nrow=2,common.legend=TRUE,legend = "top",hjust = 0,labels= c("(a)","(b)","(c)","(d)","(e)","(f)"))
-ggsave("H:/ForestCare1/crown_vita.jpg",width = 40,height = 18, units = "cm",dpi = 1000)
+ggsave("H:/ForestCare/forestCare/ForestCare/Output figures/UAV_crown_vita.jpg",width = 35,height = 20, units = "cm",dpi = 1000)
 
 (F <- ggboxplot(newdf2,"crown_vita","ndvi_mean",color = "crown_vita") + 
     stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "red", position = position_dodge(width = 0.75)) +
@@ -260,7 +318,7 @@ ggsave("Output figures/Polygon_krone_UAV2cm_NDVI.jpg",width = 28,height = 18, un
 
 
 ## randomforest
-newdata2 <- cbind(newdf2$crown_vita,newdf2[,1:72])
+newdata2 <- cbind(newdf1$crown_vita,newdf1[,1:72])
 newdata3 <- na.omit(newdata2)
 colnames(newdata3)[1] <- "crown_vita"
 rf1 <- randomForest(newdata3[,-1],as.factor(newdata3[,1]))
